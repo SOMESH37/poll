@@ -1,0 +1,32 @@
+name: poll
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  flutter_riverpod: ^0.14.0+3
+  device_info_plus: ^2.1.0
+  dio: ^4.0.0
+  shared_preferences: ^2.0.6
+  substring_highlight: ^1.0.33
+  cached_network_image: ^3.1.0
+  intl: ^0.17.0
+  share_plus: ^2.1.4
+  flutter_styled_toast: ^2.0.0
+  platform_device_id: ^1.0.1
+  url_launcher: ^6.0.9
+  flutter_linkify: ^5.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  alice: ^0.2.3
+  
+flutter:
+  uses-material-design: true
