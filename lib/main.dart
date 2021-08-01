@@ -20,6 +20,8 @@ class MyApp extends StatelessWidget {
       } else if (Platform.isLinux) {
         final build = await DeviceInfoPlugin().linuxInfo;
         _id = build.machineId;
+      } else if (Platform.isWindows) {
+        _id = await PlatformDeviceId.getDeviceId;
       } else {
         _id = await PlatformDeviceId.getDeviceId;
       }
