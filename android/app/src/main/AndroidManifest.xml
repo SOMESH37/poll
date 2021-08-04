@@ -1,26 +1,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.poll">
-    <queries>
-  <intent>
+   <queries>
+    <intent>
     <action android:name="android.intent.action.VIEW" />
     <data android:scheme="https" />
-  </intent>
-  <intent>
+    </intent>
+    <intent>
     <action android:name="android.intent.action.DIAL" />
     <data android:scheme="tel" />
-  </intent>
-  <intent>
+    </intent>
+    <intent>
     <action android:name="android.intent.action.SEND" />
     <data android:mimeType="*/*" />
-  </intent>
-</queries>
+    </intent>
+   </queries>
     <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="poll"
+        android:label="Polls"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
-            android:launchMode="singleTop"
+            android:launchMode="singleInstance"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -29,6 +29,15 @@
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="http"/>
+                <data android:scheme="https"/>
+                <data android:host="wiztex.in"/>
+                <data android:pathPrefix="/pollsapp"/>
+            </intent-filter>
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"

@@ -3,8 +3,7 @@ import '/src.dart';
 Future<QuesData> makeRequest(pollId) async {
   final res = await dio
       .get('${Meta.baseUrl}/api/user/${Storage.getDeviceId}/poll/$pollId/');
-  final data = QuesData.fromMap(res.data);
-  return data;
+  return QuesData.fromMap(res.data);
 }
 
 final fetch =
@@ -13,6 +12,15 @@ final fetch =
   return await makeRequest(pollId);
 });
 final reFetch = StateProvider<void>((r) {});
+
+final getQues =
+    FutureProvider.autoDispose.family<Ques, dynamic>((ref, quesId) async {
+  ref.watch(reGetQues);
+  final res = await dio
+      .get('${Meta.baseUrl}/api/user/${Storage.getDeviceId}/quiz/$quesId/');
+  return Ques.fromMap(res.data);
+});
+final reGetQues = StateProvider<void>((r) {});
 
 Future<QuesData?> vote(quesId, optionIndex) async {
   try {
@@ -69,13 +77,17 @@ class Ques {
   int? correctOption;
 
   factory Ques.fromMap(Map<String, dynamic> map) {
+    final _optionList =
+        List<Option>.from(map['options'].map((x) => Option.fromMap(x)));
+    int _totalVotes = 0;
+    _optionList.forEach((e) => _totalVotes += e.votes);
     return Ques(
       quesId: map['id'],
       question: map['question'].toString().trim(),
-      options: List<Option>.from(map['options'].map((x) => Option.fromMap(x))),
+      options: _optionList,
       raw: map['raw_question'],
       image: map['image'],
-      totalVotes: map['total_vote'],
+      totalVotes: _totalVotes,
       totalDiscussion: map['discussion'],
       correctOption: map['correct_answer'],
     );

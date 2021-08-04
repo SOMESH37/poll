@@ -1,3 +1,5 @@
+import 'package:photo_view/photo_view.dart';
+import 'package:share_plus/share_plus.dart';
 import 'data.dart';
 import '/src.dart';
 
@@ -27,6 +29,7 @@ class _QuestionState extends State<Question> {
   }
 
   void castVote(quesId, int option) async {
+    'Thank you 😄️'.toast(context);
     setState(() => loading = true);
     await vote(quesId, option).then((v) {
       if (v != null)
@@ -129,9 +132,11 @@ class _QuestionState extends State<Question> {
             final future = watch(fetch(widget.pollId));
             return future.when(
                 data: (data) {
-                  allQues = data.ques;
-                  if (searchList == null) searchList = allQues;
-                  return data.ques.isEmpty
+                  if (searchList == null) {
+                    allQues = data.ques;
+                    searchList = allQues;
+                  }
+                  return allQues.isEmpty
                       ? 'No question available'.body
                       : Column(
                           children: [
@@ -157,18 +162,11 @@ class _QuestionState extends State<Question> {
                                   : Scrollbar(
                                       child: ListView.builder(
                                         itemCount: searchList!.length,
-                                        itemBuilder: (_, i) {
-                                          searchList![i].totalVotes = 0;
-                                          searchList![i].options.forEach((e) {
-                                            searchList![i].totalVotes +=
-                                                e.votes;
-                                          });
-                                          return QuesTile(
-                                            ques: searchList![i],
-                                            searchText: control.text,
-                                            onVote: castVote,
-                                          );
-                                        },
+                                        itemBuilder: (_, i) => QuesTile(
+                                          ques: searchList![i],
+                                          searchText: control.text,
+                                          onVote: castVote,
+                                        ),
                                       ),
                                     ),
                             ),
@@ -185,81 +183,102 @@ class _QuestionState extends State<Question> {
   }
 }
 
+class SingleQuesPage extends StatefulWidget {
+  const SingleQuesPage(this.quesId);
+  final quesId;
+  static Route<PageRoute> route(quesId) =>
+      CupertinoPageRoute(builder: (_) => SingleQuesPage(quesId));
+
+  @override
+  _SingleQuesPageState createState() => _SingleQuesPageState();
+}
+
+class _SingleQuesPageState extends State<SingleQuesPage> {
+  var _loading = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.grey),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        bottom: PreferredSize(
+          child: LinearProgressIndicator(
+            value: _loading ? null : 1,
+            minHeight: 3,
+            color: Colors.grey.shade300,
+            backgroundColor: Colors.blue,
+          ),
+          preferredSize: Size(double.infinity, 3),
+        ),
+      ),
+      body: Consumer(
+        builder: (_, watch, __) {
+          final fut = watch(getQues(widget.quesId));
+          return fut.when(
+            loading: () => const FullScreenLoading(),
+            error: (_, __) =>
+                Center(child: Retry(() => context.read(reGetQues).state = '_')),
+            data: (quesData) => QuesTile(
+                ques: quesData,
+                searchText: '',
+                onVote: (quesId, int option) async {
+                  'Thank you 😄️'.toast(context);
+                  setState(() => _loading = true);
+                  await vote(quesId, option).then((v) {
+                    if (v != null)
+                      context.read(reGetQues).state = '_';
+                    else
+                      'Error! Try again'.toast(context);
+                    setState(() => _loading = false);
+                  });
+                }),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class QuesTile extends StatelessWidget {
-  const QuesTile({
+  QuesTile({
     required this.ques,
     required this.searchText,
     required this.onVote,
-  });
+  }) : _imageHeroTag = (ques.image?.isNotEmpty ?? false) ? UniqueKey() : null;
   final Ques ques;
   final String searchText;
   final void Function(dynamic, int) onVote;
+  final UniqueKey? _imageHeroTag;
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        elevation: 0,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                ques.question!.copy
-                    .then((v) => v ? 'Question copied!'.toast(context) : null);
-              },
-              child: Row(
-                children: [
-                  Expanded(
-                    child:
-                        Highlight('Q) ${ques.question}'.boldBody, searchText),
-                  ),
-                  Column(
+            if (ques.question?.isNotEmpty ?? false)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 24, 8, 16),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    ques.question!.copy.then(
+                        (v) => v ? 'Question copied!'.toast(context) : null);
+                  },
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (ques.question?.isNotEmpty ?? false)
-                        IconButton(
-                          onPressed: () {
-                            ques.question!.openUrl(true).then((v) => v
-                                ? null
-                                : 'Error! Ques copied instead😅️'
-                                    .toast(context));
-                          },
-                          icon: Icon(Icons.public_rounded),
-                          color: Colors.blue.shade300,
-                        ),
-                      Stack(
-                        children: [
-                          IconButton(
-                            icon: Icon(CupertinoIcons.chat_bubble_2),
-                            color: Colors.blue,
-                            onPressed: () => Navigator.of(context)
-                                .push(Discuss.route(ques.quesId)),
-                          ),
-                          if (ques.totalDiscussion > 0)
-                            Positioned(
-                              top: 10,
-                              right: 12,
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  ques.totalDiscussion.toString(),
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.blueAccent),
-                                ),
-                              ),
-                            ),
-                        ],
+                      'Q) '.boldBody,
+                      Expanded(
+                        child: Highlight(ques.question!.boldBody, searchText),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
             if (ques.correctOption != null &&
                 ques.correctOption! <= ques.options.length)
               Column(
@@ -277,7 +296,7 @@ class QuesTile extends StatelessWidget {
                         Row(
                           children: [
                             Highlight('$_correctAnsText '.boldBody, searchText),
-                            VerifiedIcon(),
+                            const VerifiedIcon(),
                           ],
                         ),
                         '${ques.options[ques.correctOption!]}'.body,
@@ -286,7 +305,7 @@ class QuesTile extends StatelessWidget {
                   ),
                 ],
               ),
-            if (ques.image != null)
+            if (_imageHeroTag != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -298,22 +317,20 @@ class QuesTile extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => Scaffold(
-                            backgroundColor: Colors.black54,
-                            body: Stack(
+                          builder: (_) => Material(
+                            child: Stack(
                               children: [
-                                Center(
-                                  child: InteractiveViewer(
-                                    maxScale: 6,
-                                    clipBehavior: Clip.none,
-                                    child: Image.network(ques.image!),
-                                  ),
+                                PhotoView(
+                                  heroAttributes: PhotoViewHeroAttributes(
+                                      tag: _imageHeroTag!),
+                                  maxScale: 7.0,
+                                  minScale: PhotoViewComputedScale.contained,
+                                  imageProvider: NetworkImage(ques.image!),
                                 ),
                                 SafeArea(
                                   child: BackButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
                                     color: Colors.white,
                                   ),
                                 ),
@@ -324,9 +341,12 @@ class QuesTile extends StatelessWidget {
                       );
                     },
                     child: Center(
-                      child: Image.network(
-                        ques.image!,
-                        height: 200,
+                      child: Hero(
+                        tag: _imageHeroTag!,
+                        child: Image.network(
+                          ques.image!,
+                          height: 200,
+                        ),
                       ),
                     ),
                   ),
@@ -344,66 +364,141 @@ class QuesTile extends StatelessWidget {
                     ? 0
                     : (ques.options[idx].votes / ques.totalVotes * 100).floor();
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: EdgeInsets.fromLTRB(16, 6, 0, 6),
                   child: Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                ques.options[idx].text.copy.then((v) =>
-                                    v ? 'Option copied!'.toast(context) : null);
-                              },
-                              child: Highlight(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            ques.options[idx].text.copy.then((v) => v
+                                ? 'Option ${idx + 1} copied!'.toast(context)
+                                : null);
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Highlight(
                                   '${ques.options[idx].text}'.body, searchText),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 2, 0, 0),
-                                  child:
-                                      '$_percentage% | ${ques.options[idx].votes} votes'
-                                          .subtitle,
-                                ),
-                                if (Storage.getIsPercentage ?? false)
-                                  FractionallySizedBox(
-                                    widthFactor: _percentage / 100,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: LinearProgressIndicator(
-                                        minHeight: 4,
-                                        value: 1,
-                                        backgroundColor: Colors.transparent,
-                                      ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
+                                child:
+                                    '$_percentage% | ${ques.options[idx].votes} votes'
+                                        .subtitle,
+                              ),
+                              if (Storage.getIsPercentage)
+                                FractionallySizedBox(
+                                  widthFactor: _percentage / 100,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: LinearProgressIndicator(
+                                      minHeight: 4,
+                                      value: 1,
+                                      backgroundColor: Colors.transparent,
                                     ),
                                   ),
-                              ],
-                            ),
-                          ],
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          primary: ques.options[idx].voted
-                              ? Colors.redAccent
-                              : Colors.greenAccent.shade400,
-                          backgroundColor: ques.options[idx].voted
-                              ? Colors.redAccent.withOpacity(0.04)
-                              : Colors.greenAccent.withOpacity(0.1),
-                        ),
-                        child: Text(
-                            '${ques.options[idx].voted ? 'Retract' : 'Vote'}'),
-                        onPressed: () => onVote(ques.quesId, idx),
+                      Checkbox(
+                        value: ques.options[idx].voted,
+                        onChanged: (_) => onVote(ques.quesId, idx),
+                        shape: CircleBorder(),
                       ),
                     ],
                   ),
                 );
               },
+            ),
+            const Divider(
+              endIndent: 40,
+              indent: 40,
+              height: 4,
+            ),
+            Row(
+              children: List.generate(
+                4,
+                (i) => (i == 2 && (ques.question?.isEmpty ?? true))
+                    ? const SizedBox.shrink()
+                    : Expanded(
+                        child: IconButton(
+                          onPressed: () {
+                            final _temp = [];
+                            ques.options.forEach((e) => _temp.add(e.text));
+                            final _fullQues =
+                                '${ques.question} ${_temp.join(' ')}';
+                            switch (i) {
+                              case 0:
+                                String _msg = '';
+                                if (!Storage.getShareLink &&
+                                    (ques.question?.isNotEmpty ?? false))
+                                  _msg = 'Question:\n${ques.question}\n';
+                                _msg =
+                                    '${_msg.isNotEmpty ? _msg : ''}https://wiztex.in/pollsapp/${Meta.version}/${ques.quesId}';
+                                Share.share(_msg);
+                                break;
+                              case 1:
+                                _fullQues.copy.then((v) => v
+                                    ? 'Question and options copied!'
+                                        .toast(context)
+                                    : null);
+                                break;
+                              case 2:
+                                final _query = Storage.getWebSearchQues
+                                    ? ques.question!
+                                    : _fullQues;
+                                _query.openUrl(true).then((v) => v
+                                    ? null
+                                    : 'Error! Question copied instead😅️'
+                                        .toast(context));
+                                break;
+                              case 3:
+                                Navigator.of(context)
+                                    .push(Discuss.route(ques.quesId));
+                                break;
+                            }
+                          },
+                          color: Colors.blue.shade300,
+                          tooltip: i == 0
+                              ? 'Share question'
+                              : i == 1
+                                  ? 'Copy all'
+                                  : i == 2
+                                      ? 'Web search'
+                                      : 'Discuss',
+                          icon: Stack(
+                            children: [
+                              Icon(i == 0
+                                  ? CupertinoIcons.share
+                                  : i == 1
+                                      ? Icons.copy_rounded
+                                      : i == 2
+                                          ? Icons.public_rounded
+                                          : CupertinoIcons.chat_bubble_2),
+                              if (i == 3 && ques.totalDiscussion > 0)
+                                Positioned(
+                                  top: -4,
+                                  right: 0,
+                                  child: Container(
+                                    padding: EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '${ques.totalDiscussion}',
+                                      style: TextStyle(
+                                          color: Colors.blue.shade300),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
             ),
           ],
         ),

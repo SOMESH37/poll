@@ -1,4 +1,3 @@
-import 'package:share_plus/share_plus.dart';
 import '/src.dart';
 import 'data.dart';
 
@@ -13,8 +12,6 @@ class InfoPage extends StatefulWidget {
 }
 
 class _InfoPageState extends State<InfoPage> {
-  bool _switch = Storage.getIsPercentage ?? false;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,11 +20,35 @@ class _InfoPageState extends State<InfoPage> {
         children: [
           SwitchListTile(
             title: 'Show percentage indicator below each option'.body,
-            value: _switch,
+            value: Storage.getIsPercentage,
             onChanged: (v) {
               setState(() {
-                _switch = !_switch;
-                Storage.setIsPercentage = _switch;
+                Storage.setIsPercentage = !Storage.getIsPercentage;
+              });
+            },
+          ),
+          SwitchListTile(
+            title: 'Web search question only'.body,
+            subtitle: Storage.getWebSearchQues
+                ? 'Only question will be parsed as query in web search'.subtitle
+                : 'Question with all its options will be parsed as query in web search'
+                    .subtitle,
+            value: Storage.getWebSearchQues,
+            onChanged: (v) {
+              setState(() {
+                Storage.setWebSearchQues = !Storage.getWebSearchQues;
+              });
+            },
+          ),
+          SwitchListTile(
+            title: 'Only share link for a question'.body,
+            subtitle: Storage.getShareLink
+                ? null
+                : 'Question will also be sent with the link'.subtitle,
+            value: Storage.getShareLink,
+            onChanged: (v) {
+              setState(() {
+                Storage.setShareLink = !Storage.getShareLink;
               });
             },
           ),

@@ -66,7 +66,7 @@ class _DiscussState extends State<Discuss> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   data[i].user.title,
-                                  if (data[i].isTrusted) VerifiedIcon(),
+                                  if (data[i].isTrusted) const VerifiedIcon(),
                                   '  (${data[i].time.read})'.subtitle,
                                 ],
                               ),

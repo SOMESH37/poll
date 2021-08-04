@@ -1,5 +1,7 @@
 export 'dart:convert';
 export 'dart:math';
+export 'dart:io';
+export 'dart:async' show StreamSubscription;
 
 export 'package:flutter/cupertino.dart' hide RefreshCallback;
 export 'package:flutter/material.dart';
@@ -122,6 +124,8 @@ class Retry extends StatelessWidget {
 }
 
 class VerifiedIcon extends StatelessWidget {
+  const VerifiedIcon({this.size = 20});
+  final double size;
   @override
   Widget build(BuildContext context) {
     return Icon(
@@ -132,32 +136,42 @@ class VerifiedIcon extends StatelessWidget {
   }
 }
 
-class FullscreenLoading extends StatelessWidget {
-  const FullscreenLoading();
+class FullScreenLoading extends StatelessWidget {
+  const FullScreenLoading();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
   }
 }
 
-abstract class Storage {
+class Storage {
   static Future<void> init() async =>
       _pref = await SharedPreferences.getInstance();
   static late SharedPreferences _pref;
-  static bool? get getIsPercentage => _pref.getBool('isPercentage');
+  static bool get getIsPercentage => _pref.getBool('isPercentage') ?? true;
   static set setIsPercentage(bool isPercentage) =>
       _pref.setBool('isPercentage', isPercentage);
+  static bool get getWebSearchQues => _pref.getBool('webSearchQues') ?? true;
+  static set setWebSearchQues(bool webSearchQues) =>
+      _pref.setBool('webSearchQues', webSearchQues);
+  static bool get getShareLink => _pref.getBool('shareLink') ?? true;
+  static set setShareLink(bool shareLink) =>
+      _pref.setBool('shareLink', shareLink);
   static String? get getDeviceId => _pref.getString('deviceId');
   static set setDeviceId(String id) => _pref.setString('deviceId', id);
 }
 
-abstract class Meta {
+class Meta {
   // IMPORTANT: sasta version control 😏️
-  static const version = '1.0.0';
+  static const version = '1.1.0';
   static String? baseUrl;
-  static late String? tgLink;
-  static late String? msg;
+  static String? tgLink;
+  static String? msg;
   static init(Map<String, dynamic> map) {
     baseUrl = map['baseUrl'];
     tgLink = map['channelLink'];
