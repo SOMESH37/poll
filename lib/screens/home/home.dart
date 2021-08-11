@@ -268,14 +268,15 @@ class UpdatePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (Meta.msg != null) Meta.msg!.txt(align: TextAlign.center),
-              TextButton(
-                onPressed: () {
-                  Meta.tgLink!.openUrl().then((v) => v
-                      ? null
-                      : 'Error! Link copied instead😅️'.toast(context));
-                },
-                child: Text('Update'),
-              ),
+              if (Meta.tgLink != null)
+                TextButton(
+                  onPressed: () {
+                    Meta.tgLink!.openUrl().then((v) => v
+                        ? null
+                        : 'Error! Link copied instead😅️'.toast(context));
+                  },
+                  child: Text('Update'),
+                ),
             ],
           ),
         ),

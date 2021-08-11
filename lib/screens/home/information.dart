@@ -21,11 +21,9 @@ class _InfoPageState extends State<InfoPage> {
           SwitchListTile(
             title: 'Show percentage indicator below each option'.body,
             value: Storage.getIsPercentage,
-            onChanged: (v) {
-              setState(() {
-                Storage.setIsPercentage = !Storage.getIsPercentage;
-              });
-            },
+            onChanged: (v) => setState(() {
+              Storage.setIsPercentage = !Storage.getIsPercentage;
+            }),
           ),
           SwitchListTile(
             title: 'Web search question only'.body,
@@ -34,23 +32,16 @@ class _InfoPageState extends State<InfoPage> {
                 : 'Question with all its options will be parsed as query in web search'
                     .subtitle,
             value: Storage.getWebSearchQues,
-            onChanged: (v) {
-              setState(() {
-                Storage.setWebSearchQues = !Storage.getWebSearchQues;
-              });
-            },
+            onChanged: (v) => setState(() {
+              Storage.setWebSearchQues = !Storage.getWebSearchQues;
+            }),
           ),
           SwitchListTile(
-            title: 'Only share link for a question'.body,
-            subtitle: Storage.getShareLink
-                ? null
-                : 'Question will also be sent with the link'.subtitle,
-            value: Storage.getShareLink,
-            onChanged: (v) {
-              setState(() {
-                Storage.setShareLink = !Storage.getShareLink;
-              });
-            },
+            title: 'Share a image of question with the link'.body,
+            value: Storage.getShareImg,
+            onChanged: (v) => setState(() {
+              Storage.setShareImg = !Storage.getShareImg;
+            }),
           ),
           if (widget.data.telegram?.isNotEmpty ?? false)
             ListTile(
@@ -72,12 +63,26 @@ class _InfoPageState extends State<InfoPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  'Tips\n'.body,
                   widget.data.tips!.txt(
                     color: Colors.grey,
                     align: TextAlign.center,
                   ),
                 ],
+              ),
+            ),
+          if (widget.data.donation?.isNotEmpty ?? false)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: GestureDetector(
+                onTap: () {
+                  widget.data.donation!.openUrl().then((v) => v
+                      ? null
+                      : 'Error! Link copied instead😅️'.toast(context));
+                },
+                child: Image.asset(
+                  'asset/bmc.png',
+                  height: 48,
+                ),
               ),
             ),
           Spacer(),

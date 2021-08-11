@@ -9,12 +9,15 @@ export 'package:flutter/services.dart';
 
 export 'package:flutter_riverpod/flutter_riverpod.dart';
 export 'package:flutter_linkify/flutter_linkify.dart';
+export 'package:screenshot/screenshot.dart';
+export 'package:path_provider/path_provider.dart';
 
 export 'screens/discuss/discuss.dart';
 export 'screens/home/home.dart';
 export 'screens/question/question.dart';
 export 'screens/home/information.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,6 +84,11 @@ extension Helpers on String {
   }
 }
 
+extension Format on DateTime {
+  static final _formatter = DateFormat('h:mma | dd/MM/yy');
+  String get read => _formatter.format(this.toLocal());
+}
+
 class Highlight extends StatelessWidget {
   const Highlight(this.text, this.searchText);
   final Text text;
@@ -96,9 +104,26 @@ class Highlight extends StatelessWidget {
   }
 }
 
-extension Format on DateTime {
-  static final _formatter = DateFormat('h:mma | dd/MM/yy');
-  String get read => _formatter.format(this.toLocal());
+class CachedImage extends StatelessWidget {
+  const CachedImage(this.url) : _fit = BoxFit.contain;
+  const CachedImage.cover(this.url) : _fit = BoxFit.cover;
+  final String url;
+  final BoxFit _fit;
+  @override
+  Widget build(BuildContext context) {
+    return CachedNetworkImage(
+      fit: _fit,
+      imageUrl: url,
+      placeholder: (_, p) => const Icon(
+        Icons.photo_outlined,
+        color: Colors.grey,
+      ),
+      errorWidget: (_, e, __) => const Icon(
+        Icons.hide_image_outlined,
+        color: Colors.grey,
+      ),
+    );
+  }
 }
 
 class Retry extends StatelessWidget {
@@ -154,21 +179,18 @@ class Storage {
       _pref = await SharedPreferences.getInstance();
   static late SharedPreferences _pref;
   static bool get getIsPercentage => _pref.getBool('isPercentage') ?? true;
-  static set setIsPercentage(bool isPercentage) =>
-      _pref.setBool('isPercentage', isPercentage);
+  static set setIsPercentage(bool v) => _pref.setBool('isPercentage', v);
   static bool get getWebSearchQues => _pref.getBool('webSearchQues') ?? true;
-  static set setWebSearchQues(bool webSearchQues) =>
-      _pref.setBool('webSearchQues', webSearchQues);
-  static bool get getShareLink => _pref.getBool('shareLink') ?? true;
-  static set setShareLink(bool shareLink) =>
-      _pref.setBool('shareLink', shareLink);
+  static set setWebSearchQues(bool v) => _pref.setBool('webSearchQues', v);
+  static bool get getShareImg => _pref.getBool('shareImg') ?? true;
+  static set setShareImg(bool v) => _pref.setBool('shareImg', v);
   static String? get getDeviceId => _pref.getString('deviceId');
   static set setDeviceId(String id) => _pref.setString('deviceId', id);
 }
 
 class Meta {
   // IMPORTANT: sasta version control 😏️
-  static const version = '1.1.0';
+  static const version = '1.2.0';
   static String? baseUrl;
   static String? tgLink;
   static String? msg;

@@ -121,11 +121,11 @@ class _QuestionState extends State<Question> {
           autofocus: false,
           controller: control,
           decoration: InputDecoration.collapsed(
-            hintText: 'Search for questions or options',
-          ),
+              hintText: 'Search for questions or options'),
           keyboardType: TextInputType.text,
         ),
       ),
+      backgroundColor: Colors.grey.shade100,
       body: Center(
         child: Consumer(
           builder: (ctx, watch, _) {
@@ -138,40 +138,31 @@ class _QuestionState extends State<Question> {
                   }
                   return allQues.isEmpty
                       ? 'No question available'.body
-                      : Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 16),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  'Total match found : '.subtitle,
-                                  '${searchList!.length}'.subtitle,
-                                ],
-                              ),
-                            ),
-                            const Divider(
-                              endIndent: 120,
-                              indent: 120,
-                              height: 0,
-                            ),
-                            Expanded(
-                              child: searchList!.isEmpty
-                                  ? Center(child: 'Nothing found'.body)
-                                  : Scrollbar(
-                                      child: ListView.builder(
-                                        itemCount: searchList!.length,
-                                        itemBuilder: (_, i) => QuesTile(
-                                          ques: searchList![i],
-                                          searchText: control.text,
-                                          onVote: castVote,
+                      : searchList!.isEmpty
+                          ? Center(child: 'Nothing found'.body)
+                          : Scrollbar(
+                              child: ListView.builder(
+                                itemCount: searchList!.length + 1,
+                                itemBuilder: (_, i) => i == 0
+                                    ? Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8, horizontal: 16),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            'Total match found : '.subtitle,
+                                            '${searchList!.length}'.subtitle,
+                                          ],
                                         ),
+                                      )
+                                    : QuesTile(
+                                        ques: searchList![i - 1],
+                                        searchText: control.text,
+                                        onVote: castVote,
                                       ),
-                                    ),
-                            ),
-                          ],
-                        );
+                              ),
+                            );
                 },
                 loading: () => CircularProgressIndicator(),
                 error: (_, __) =>
@@ -250,255 +241,311 @@ class QuesTile extends StatelessWidget {
   final String searchText;
   final void Function(dynamic, int) onVote;
   final UniqueKey? _imageHeroTag;
+  late final _ssController = ScreenshotController();
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
+        color: Colors.white,
         elevation: 0,
+        clipBehavior: Clip.hardEdge,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (ques.question?.isNotEmpty ?? false)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 24, 8, 16),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    ques.question!.copy.then(
-                        (v) => v ? 'Question copied!'.toast(context) : null);
-                  },
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      'Q) '.boldBody,
-                      Expanded(
-                        child: Highlight(ques.question!.boldBody, searchText),
+            Screenshot(
+              controller: _ssController,
+              child: Material(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    if (ques.question?.isNotEmpty ?? false)
+                      Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                ques.question!.copy.then((v) => v
+                                    ? 'Question copied!'.toast(context)
+                                    : null);
+                              },
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  'Q) '.boldBody,
+                                  Expanded(
+                                    child: Highlight(
+                                        ques.question!.boldBody, searchText),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Divider(
+                            endIndent: 40,
+                            indent: 40,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            if (ques.correctOption != null &&
-                ques.correctOption! <= ques.options.length)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Divider(
-                    endIndent: 40,
-                    indent: 40,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Highlight('$_correctAnsText '.boldBody, searchText),
-                            const VerifiedIcon(),
-                          ],
-                        ),
-                        '${ques.options[ques.correctOption!]}'.body,
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            if (_imageHeroTag != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Divider(
-                    endIndent: 40,
-                    indent: 40,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => Material(
-                            child: Stack(
-                              children: [
-                                PhotoView(
-                                  heroAttributes: PhotoViewHeroAttributes(
-                                      tag: _imageHeroTag!),
-                                  maxScale: 7.0,
-                                  minScale: PhotoViewComputedScale.contained,
-                                  imageProvider: NetworkImage(ques.image!),
-                                ),
-                                SafeArea(
-                                  child: BackButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    color: Colors.white,
+                    if (_imageHeroTag != null)
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => Material(
+                                    child: Stack(
+                                      children: [
+                                        PhotoView.customChild(
+                                          heroAttributes:
+                                              PhotoViewHeroAttributes(
+                                                  tag: _imageHeroTag!),
+                                          maxScale: 7.0,
+                                          minScale:
+                                              PhotoViewComputedScale.contained,
+                                          child: CachedImage(ques.image!),
+                                        ),
+                                        SafeArea(
+                                          child: BackButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
+                              );
+                            },
+                            child: Center(
+                              child: Hero(
+                                tag: _imageHeroTag!,
+                                child: SizedBox(
+                                  height: 200,
+                                  child: CachedImage(ques.image!),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Divider(
+                            endIndent: 40,
+                            indent: 40,
+                          ),
+                        ],
+                      ),
+                    if (ques.correctOption != null &&
+                        ques.correctOption! <= ques.options.length)
+                      Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Highlight('$_correctAnsText '.boldBody,
+                                        searchText),
+                                    const VerifiedIcon(),
+                                  ],
+                                ),
+                                '${ques.options[ques.correctOption!].text}'
+                                    .body,
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    child: Center(
-                      child: Hero(
-                        tag: _imageHeroTag!,
-                        child: Image.network(
-                          ques.image!,
-                          height: 200,
-                        ),
+                          const Divider(
+                            endIndent: 40,
+                            indent: 40,
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            const Divider(
-              endIndent: 40,
-              indent: 40,
-            ),
-            ...List.generate(
-              ques.options.length,
-              (idx) {
-                final _percentage = (ques.options[idx].votes == 0 ||
-                        ques.totalVotes == 0)
-                    ? 0
-                    : (ques.options[idx].votes / ques.totalVotes * 100).floor();
-                return Padding(
-                  padding: EdgeInsets.fromLTRB(16, 6, 0, 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            ques.options[idx].text.copy.then((v) => v
-                                ? 'Option ${idx + 1} copied!'.toast(context)
-                                : null);
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    ...List.generate(
+                      ques.options.length,
+                      (idx) {
+                        final _percentage = (ques.options[idx].votes == 0 ||
+                                ques.totalVotes == 0)
+                            ? 0
+                            : (ques.options[idx].votes / ques.totalVotes * 100)
+                                .floor();
+                        return Padding(
+                          padding: EdgeInsets.fromLTRB(16, 6, 0, 6),
+                          child: Row(
                             children: [
-                              Highlight(
-                                  '${ques.options[idx].text}'.body, searchText),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                                child:
-                                    '$_percentage% | ${ques.options[idx].votes} votes'
-                                        .subtitle,
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    ques.options[idx].text.copy.then((v) => v
+                                        ? 'Option ${idx + 1} copied!'
+                                            .toast(context)
+                                        : null);
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Highlight(
+                                          '${ques.options[idx].text}'.body,
+                                          searchText),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            0, 2, 0, 2),
+                                        child:
+                                            '$_percentage% | ${ques.options[idx].votes} votes'
+                                                .subtitle,
+                                      ),
+                                      if (Storage.getIsPercentage)
+                                        FractionallySizedBox(
+                                          widthFactor: _percentage / 100,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            child: LinearProgressIndicator(
+                                              minHeight: 4,
+                                              value: 1,
+                                              backgroundColor:
+                                                  Colors.transparent,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              if (Storage.getIsPercentage)
-                                FractionallySizedBox(
-                                  widthFactor: _percentage / 100,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: LinearProgressIndicator(
-                                      minHeight: 4,
-                                      value: 1,
-                                      backgroundColor: Colors.transparent,
-                                    ),
-                                  ),
-                                ),
+                              Checkbox(
+                                value: ques.options[idx].voted,
+                                onChanged: (_) => onVote(ques.quesId, idx),
+                                shape: CircleBorder(),
+                              ),
                             ],
                           ),
-                        ),
-                      ),
-                      Checkbox(
-                        value: ques.options[idx].voted,
-                        onChanged: (_) => onVote(ques.quesId, idx),
-                        shape: CircleBorder(),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const Divider(
-              endIndent: 40,
-              indent: 40,
-              height: 4,
-            ),
-            Row(
-              children: List.generate(
-                4,
-                (i) => (i == 2 && (ques.question?.isEmpty ?? true))
-                    ? const SizedBox.shrink()
-                    : Expanded(
-                        child: IconButton(
-                          onPressed: () {
-                            final _temp = [];
-                            ques.options.forEach((e) => _temp.add(e.text));
-                            final _fullQues =
-                                '${ques.question} ${_temp.join(' ')}';
-                            switch (i) {
-                              case 0:
-                                String _msg = '';
-                                if (!Storage.getShareLink &&
-                                    (ques.question?.isNotEmpty ?? false))
-                                  _msg = 'Question:\n${ques.question}\n';
-                                _msg =
-                                    '${_msg.isNotEmpty ? _msg : ''}https://wiztex.in/pollsapp/${Meta.version}/${ques.quesId}';
-                                Share.share(_msg);
-                                break;
-                              case 1:
-                                _fullQues.copy.then((v) => v
-                                    ? 'Question and options copied!'
-                                        .toast(context)
-                                    : null);
-                                break;
-                              case 2:
-                                final _query = Storage.getWebSearchQues
-                                    ? ques.question!
-                                    : _fullQues;
-                                _query.openUrl(true).then((v) => v
-                                    ? null
-                                    : 'Error! Question copied instead😅️'
-                                        .toast(context));
-                                break;
-                              case 3:
-                                Navigator.of(context)
-                                    .push(Discuss.route(ques.quesId));
-                                break;
-                            }
-                          },
-                          color: Colors.blue.shade300,
-                          tooltip: i == 0
-                              ? 'Share question'
-                              : i == 1
-                                  ? 'Copy all'
-                                  : i == 2
-                                      ? 'Web search'
-                                      : 'Discuss',
-                          icon: Stack(
-                            children: [
-                              Icon(i == 0
-                                  ? CupertinoIcons.share
-                                  : i == 1
-                                      ? Icons.copy_rounded
-                                      : i == 2
-                                          ? Icons.public_rounded
-                                          : CupertinoIcons.chat_bubble_2),
-                              if (i == 3 && ques.totalDiscussion > 0)
-                                Positioned(
-                                  top: -4,
-                                  right: 0,
-                                  child: Container(
-                                    padding: EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      '${ques.totalDiscussion}',
-                                      style: TextStyle(
-                                          color: Colors.blue.shade300),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
+            ),
+            Column(
+              children: [
+                const Divider(
+                  endIndent: 40,
+                  indent: 40,
+                  height: 4,
+                ),
+                Row(
+                  children: List.generate(
+                    4,
+                    (i) => (i == 2 && (ques.question?.isEmpty ?? true))
+                        ? const SizedBox.shrink()
+                        : Expanded(
+                            child: IconButton(
+                              onPressed: () {
+                                var _temp = [];
+                                ques.options.forEach((e) => _temp.add(e.text));
+                                final _fullQues =
+                                    '${ques.question} ${_temp.join(' ')}';
+                                switch (i) {
+                                  case 0:
+                                    'Please wait'.toast(context);
+                                    final _link =
+                                        'https://pollapp.dev/${Meta.version}/question/${ques.quesId}';
+                                    if (Storage.getShareImg) {
+                                      _ssController.capture().then((v) async {
+                                        if (v == null)
+                                          throw ErrorHint(
+                                              'image cannot be null');
+                                        final dic =
+                                            await getTemporaryDirectory();
+                                        final img = await File(
+                                                '${dic.path}/${ques.quesId}.png')
+                                            .create();
+                                        await img.writeAsBytes(v);
+                                        Share.shareFiles(
+                                          [img.path],
+                                          text: _link,
+                                          subject: 'Poll app',
+                                        );
+                                      }).catchError((_) {
+                                        _link.copy.then((v) => v
+                                            ? 'Link copied!'.toast(context)
+                                            : null);
+                                      });
+                                    } else {
+                                      Share.share(_link).catchError((_) {
+                                        _link.copy.then((v) => v
+                                            ? 'Link copied!'.toast(context)
+                                            : null);
+                                      });
+                                    }
+                                    break;
+                                  case 1:
+                                    _fullQues.copy.then((v) => v
+                                        ? 'Question and options copied!'
+                                            .toast(context)
+                                        : null);
+                                    break;
+                                  case 2:
+                                    final _query = Storage.getWebSearchQues
+                                        ? ques.question!
+                                        : _fullQues;
+                                    _query.openUrl(true).then((v) => v
+                                        ? null
+                                        : 'Error! Question copied instead😅️'
+                                            .toast(context));
+                                    break;
+                                  case 3:
+                                    Navigator.of(context)
+                                        .push(Discuss.route(ques.quesId));
+                                    break;
+                                }
+                              },
+                              color: Colors.blue.shade300,
+                              tooltip: i == 0
+                                  ? 'Share question'
+                                  : i == 1
+                                      ? 'Copy all'
+                                      : i == 2
+                                          ? 'Web search'
+                                          : 'Discuss',
+                              icon: Stack(
+                                children: [
+                                  Icon(i == 0
+                                      ? CupertinoIcons.share
+                                      : i == 1
+                                          ? Icons.copy_rounded
+                                          : i == 2
+                                              ? Icons.public_rounded
+                                              : CupertinoIcons.chat_bubble_2),
+                                  if (i == 3 && ques.totalDiscussion > 0)
+                                    Positioned(
+                                      top: -1,
+                                      right: 0,
+                                      child: Container(
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 2),
+                                        decoration:
+                                            BoxDecoration(color: Colors.white),
+                                        child: Text(
+                                          '${ques.totalDiscussion}',
+                                          style: TextStyle(
+                                            color: Colors.blue,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -2,11 +2,12 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:platform_device_id/platform_device_id.dart';
 import 'src.dart';
 
-void main() => runApp(const MyApp());
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp();
+  bool _isInit = false;
   Future<void> init() async {
+    if (_isInit) return;
     WidgetsFlutterBinding.ensureInitialized();
     SystemChrome.setPreferredOrientations(
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
@@ -17,6 +18,9 @@ class MyApp extends StatelessWidget {
       if (Platform.isAndroid) {
         final build = await DeviceInfoPlugin().androidInfo;
         _id = build.androidId;
+      } else if (Platform.isIOS) {
+        final build = await DeviceInfoPlugin().iosInfo;
+        _id = build.identifierForVendor;
       } else if (Platform.isLinux) {
         final build = await DeviceInfoPlugin().linuxInfo;
         _id = build.machineId;
@@ -29,6 +33,7 @@ class MyApp extends StatelessWidget {
       // replacing all / as it will interfere deep linking
       Storage.setDeviceId = _id!.replaceAll('/', '');
     }
+    _isInit = true;
   }
 
   @override
@@ -42,7 +47,7 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
           // navigatorKey: alice.getNavigatorKey(),
           // debugShowMaterialGrid: true,
-          title: 'Polls',
+          title: 'Poll',
           home: FutureBuilder(
             future: init(),
             builder: (cxt, snap) {

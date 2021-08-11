@@ -55,16 +55,19 @@ class HomeData {
 
 class Info {
   Info({
-    required this.tips,
+    this.tips,
     this.telegram,
+    this.donation,
   });
 
   String? tips;
   String? telegram;
+  String? donation;
 
   factory Info.fromJson(Map<String, dynamic> json) => Info(
         tips: json["tips"],
         telegram: json["telegram"],
+        donation: json["donation"],
       );
 }
 
