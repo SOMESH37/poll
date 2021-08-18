@@ -9,29 +9,33 @@ export 'package:flutter/services.dart';
 
 export 'package:flutter_riverpod/flutter_riverpod.dart';
 export 'package:flutter_linkify/flutter_linkify.dart';
-export 'package:screenshot/screenshot.dart';
-export 'package:path_provider/path_provider.dart';
+export 'package:google_mobile_ads/google_mobile_ads.dart';
 
 export 'screens/discuss/discuss.dart';
 export 'screens/home/home.dart';
 export 'screens/question/question.dart';
 export 'screens/home/information.dart';
 
+import 'dart:ui' as ui;
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart' as dioBase;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-// import 'package:alice/alice.dart';
+import 'package:alice/alice.dart';
 
-// final alice = Alice();
+final _alice = Meta.isDeveloping && Platform.isAndroid ? Alice() : null;
+final navKey = _alice?.getNavigatorKey();
 final dio = dioBase.Dio()
-// ..interceptors.add(alice.getDioInterceptor())
-    ;
+  ..interceptors.add(_alice?.getDioInterceptor() ?? dioBase.Interceptor());
 late Size dimensions;
 
 extension Helpers on String {
@@ -190,13 +194,56 @@ class Storage {
 
 class Meta {
   // IMPORTANT: sasta version control 😏️
-  static const version = '1.2.0';
+  static const version = '1.3.0';
+  static const isDeveloping = false;
   static String? baseUrl;
   static String? tgLink;
   static String? msg;
+  static late bool showAds;
   static init(Map<String, dynamic> map) {
     baseUrl = map['baseUrl'];
     tgLink = map['channelLink'];
     msg = map['msg'];
+    showAds = map['showAds'] ?? false;
+  }
+}
+
+class AdState {
+  static Future<void> init() async {
+    if (Platform.isAndroid) await MobileAds.instance.initialize();
+  }
+
+  static String? get bannerAdUnitId {
+    if (!Platform.isAndroid || !Meta.showAds) return null;
+    if (Meta.isDeveloping)
+      return BannerAd.testAdUnitId;
+    else
+      return 'ca-app-pub-8812082806102665/4730023553';
+  }
+
+  static String? get interstitialAdUnitId {
+    if (!Platform.isAndroid || !Meta.showAds) return null;
+    if (Meta.isDeveloping)
+      return InterstitialAd.testAdUnitId;
+    else
+      return 'ca-app-pub-8812082806102665/3274305806';
+  }
+}
+
+Future<String?> convertWidgetToImage(GlobalKey key) async {
+  try {
+    final repaintBoundary =
+        key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    final boxImage = await repaintBoundary.toImage(pixelRatio: 1.5);
+    final byteData = await boxImage.toByteData(format: ui.ImageByteFormat.png);
+    final directory = await getTemporaryDirectory();
+    if (byteData == null) return null;
+    final file = await File('${directory.path}/ques.png').writeAsBytes(
+      byteData.buffer
+          .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+    );
+    return file.path;
+  } catch (_) {
+    return null;
   }
 }

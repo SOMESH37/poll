@@ -8,9 +8,9 @@ class MyApp extends StatelessWidget {
   bool _isInit = false;
   Future<void> init() async {
     if (_isInit) return;
-    WidgetsFlutterBinding.ensureInitialized();
     SystemChrome.setPreferredOrientations(
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+    await AdState.init();
     String? _id;
     await Storage.init();
     _id = Storage.getDeviceId;
@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
           return false;
         },
         child: MaterialApp(
-          // navigatorKey: alice.getNavigatorKey(),
+          navigatorKey: navKey,
           // debugShowMaterialGrid: true,
           title: 'Poll',
           home: FutureBuilder(

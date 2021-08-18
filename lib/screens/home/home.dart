@@ -29,9 +29,11 @@ class AllPolls extends StatefulWidget {
 
 class _AllPollsState extends State<AllPolls> {
   StreamSubscription? _sub;
+  InterstitialAd? fullScreenAd;
   @override
   void initState() {
     super.initState();
+    getAd();
     if (Platform.isAndroid) {
       _handleIncomingLinks();
       _handleInitialUri();
@@ -42,6 +44,20 @@ class _AllPollsState extends State<AllPolls> {
   void dispose() {
     _sub?.cancel();
     super.dispose();
+  }
+
+  void getAd() {
+    if (AdState.interstitialAdUnitId != null)
+      InterstitialAd.load(
+        adUnitId: AdState.interstitialAdUnitId!,
+        request: AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdFailedToLoad: (_) {},
+          onAdLoaded: (_) {
+            fullScreenAd = _;
+          },
+        ),
+      );
   }
 
   void _pushLink(String link) {
@@ -84,6 +100,7 @@ class _AllPollsState extends State<AllPolls> {
                 : [
                     IconButton(
                       onPressed: () {
+                        getAd();
                         context.read(reFetch).state = '_';
                       },
                       icon: Icon(Icons.refresh),
@@ -124,6 +141,7 @@ class _AllPollsState extends State<AllPolls> {
                           ],
                         ),
                         onTap: () {
+                          fullScreenAd?.show().then((_) => getAd());
                           Navigator.of(context)
                               .push(Question.route(data.polls[i].id));
                         },

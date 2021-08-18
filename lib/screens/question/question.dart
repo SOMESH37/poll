@@ -140,27 +140,30 @@ class _QuestionState extends State<Question> {
                       ? 'No question available'.body
                       : searchList!.isEmpty
                           ? Center(child: 'Nothing found'.body)
-                          : Scrollbar(
-                              child: ListView.builder(
-                                itemCount: searchList!.length + 1,
-                                itemBuilder: (_, i) => i == 0
-                                    ? Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8, horizontal: 16),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            'Total match found : '.subtitle,
-                                            '${searchList!.length}'.subtitle,
-                                          ],
+                          : SafeArea(
+                              top: false,
+                              child: Scrollbar(
+                                child: ListView.builder(
+                                  itemCount: searchList!.length + 1,
+                                  itemBuilder: (_, i) => i == 0
+                                      ? Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8, horizontal: 16),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              'Total match found : '.subtitle,
+                                              '${searchList!.length}'.subtitle,
+                                            ],
+                                          ),
+                                        )
+                                      : QuesTile(
+                                          ques: searchList![i - 1],
+                                          searchText: control.text,
+                                          onVote: castVote,
                                         ),
-                                      )
-                                    : QuesTile(
-                                        ques: searchList![i - 1],
-                                        searchText: control.text,
-                                        onVote: castVote,
-                                      ),
+                                ),
                               ),
                             );
                 },
@@ -210,20 +213,22 @@ class _SingleQuesPageState extends State<SingleQuesPage> {
             loading: () => const FullScreenLoading(),
             error: (_, __) =>
                 Center(child: Retry(() => context.read(reGetQues).state = '_')),
-            data: (quesData) => QuesTile(
-                ques: quesData,
-                searchText: '',
-                onVote: (quesId, int option) async {
-                  'Thank you 😄️'.toast(context);
-                  setState(() => _loading = true);
-                  await vote(quesId, option).then((v) {
-                    if (v != null)
-                      context.read(reGetQues).state = '_';
-                    else
-                      'Error! Try again'.toast(context);
-                    setState(() => _loading = false);
-                  });
-                }),
+            data: (quesData) => SingleChildScrollView(
+              child: QuesTile(
+                  ques: quesData,
+                  searchText: '',
+                  onVote: (quesId, int option) async {
+                    'Thank you 😄️'.toast(context);
+                    setState(() => _loading = true);
+                    await vote(quesId, option).then((v) {
+                      if (v != null)
+                        context.read(reGetQues).state = '_';
+                      else
+                        'Error! Try again'.toast(context);
+                      setState(() => _loading = false);
+                    });
+                  }),
+            ),
           );
         },
       ),
@@ -241,7 +246,7 @@ class QuesTile extends StatelessWidget {
   final String searchText;
   final void Function(dynamic, int) onVote;
   final UniqueKey? _imageHeroTag;
-  late final _ssController = ScreenshotController();
+  final _repaintKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -252,8 +257,8 @@ class QuesTile extends StatelessWidget {
         clipBehavior: Clip.hardEdge,
         child: Column(
           children: [
-            Screenshot(
-              controller: _ssController,
+            RepaintBoundary(
+              key: _repaintKey,
               child: Material(
                 color: Colors.white,
                 child: Column(
@@ -430,6 +435,7 @@ class QuesTile extends StatelessWidget {
                 ),
               ),
             ),
+            MyBannerAd(),
             Column(
               children: [
                 const Divider(
@@ -455,18 +461,13 @@ class QuesTile extends StatelessWidget {
                                     final _link =
                                         'https://pollapp.dev/${Meta.version}/question/${ques.quesId}';
                                     if (Storage.getShareImg) {
-                                      _ssController.capture().then((v) async {
+                                      convertWidgetToImage(_repaintKey)
+                                          .then((v) async {
                                         if (v == null)
                                           throw ErrorHint(
-                                              'image cannot be null');
-                                        final dic =
-                                            await getTemporaryDirectory();
-                                        final img = await File(
-                                                '${dic.path}/${ques.quesId}.png')
-                                            .create();
-                                        await img.writeAsBytes(v);
+                                              'path cannot be null');
                                         Share.shareFiles(
-                                          [img.path],
+                                          [v],
                                           text: _link,
                                           subject: 'Poll app',
                                         );
@@ -551,5 +552,29 @@ class QuesTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class MyBannerAd extends StatelessWidget {
+  const MyBannerAd([this.height = 60]);
+  final double height;
+  @override
+  Widget build(BuildContext context) {
+    try {
+      return SizedBox(
+        height: height,
+        child: AdWidget(
+          ad: BannerAd(
+            size:
+                AdSize(height: height.toInt(), width: dimensions.width.toInt()),
+            adUnitId: AdState.bannerAdUnitId!,
+            listener: BannerAdListener(),
+            request: AdRequest(),
+          )..load(),
+        ),
+      );
+    } catch (_) {
+      return SizedBox.shrink();
+    }
   }
 }

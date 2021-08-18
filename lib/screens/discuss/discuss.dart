@@ -109,7 +109,7 @@ class _DiscussState extends State<Discuss> {
                             onPressed: text.isEmpty || loading
                                 ? null
                                 : () {
-                                    if (data.length > 100) {
+                                    if (data.length > 900) {
                                       'Discussion is disabled'.toast(context);
                                       return;
                                     }
