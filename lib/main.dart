@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
     if (_isInit) return;
     SystemChrome.setPreferredOrientations(
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-    await AdState.init();
+    AdState.init();
     String? _id;
     await Storage.init();
     _id = Storage.getDeviceId;

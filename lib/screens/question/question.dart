@@ -21,10 +21,29 @@ class _QuestionState extends State<Question> {
   bool loading = false;
   var allQues = <Ques>[];
   List<Ques>? searchList;
+  var bannerAds = <AdWithView?>[];
+
+  void loadAds() async {
+    bannerAds.clear();
+    for (var i = 0; i < allQues.length; i++) {
+      final _temp = i % 3 == 0
+          ? BannerAd(
+              size: AdSize(height: 50, width: dimensions.width.toInt()),
+              adUnitId: AdState.bannerAdUnitId!,
+              listener: BannerAdListener(),
+              request: AdRequest(),
+            )
+          : null;
+      await _temp?.load();
+      bannerAds.add(_temp);
+    }
+    if (mounted) setState(() {});
+  }
 
   void request() async {
     setState(() => loading = true);
     allQues = (await makeRequest(widget.pollId)).ques;
+    loadAds();
     search();
   }
 
@@ -32,10 +51,12 @@ class _QuestionState extends State<Question> {
     'Thank you 😄️'.toast(context);
     setState(() => loading = true);
     await vote(quesId, option).then((v) {
-      if (v != null)
+      if (v != null) {
         allQues = v.ques;
-      else
+        loadAds();
+      } else {
         'Error! Try again'.toast(context);
+      }
     });
     search();
   }
@@ -135,6 +156,7 @@ class _QuestionState extends State<Question> {
                   if (searchList == null) {
                     allQues = data.ques;
                     searchList = allQues;
+                    loadAds();
                   }
                   return allQues.isEmpty
                       ? 'No question available'.body
@@ -162,6 +184,14 @@ class _QuestionState extends State<Question> {
                                           ques: searchList![i - 1],
                                           searchText: control.text,
                                           onVote: castVote,
+                                          ad: i > bannerAds.length ||
+                                                  bannerAds[i - 1] == null
+                                              ? const SizedBox.shrink()
+                                              : SizedBox(
+                                                  height: 50,
+                                                  child: AdWidget(
+                                                      ad: bannerAds[i - 1]!),
+                                                ),
                                         ),
                                 ),
                               ),
@@ -215,6 +245,7 @@ class _SingleQuesPageState extends State<SingleQuesPage> {
                 Center(child: Retry(() => context.read(reGetQues).state = '_')),
             data: (quesData) => SingleChildScrollView(
               child: QuesTile(
+                  ad: MyBannerAd(),
                   ques: quesData,
                   searchText: '',
                   onVote: (quesId, int option) async {
@@ -241,10 +272,12 @@ class QuesTile extends StatelessWidget {
     required this.ques,
     required this.searchText,
     required this.onVote,
+    required this.ad,
   }) : _imageHeroTag = (ques.image?.isNotEmpty ?? false) ? UniqueKey() : null;
   final Ques ques;
   final String searchText;
   final void Function(dynamic, int) onVote;
+  final Widget ad;
   final UniqueKey? _imageHeroTag;
   final _repaintKey = GlobalKey();
   @override
@@ -435,7 +468,7 @@ class QuesTile extends StatelessWidget {
                 ),
               ),
             ),
-            MyBannerAd(),
+            ad,
             Column(
               children: [
                 const Divider(
@@ -574,7 +607,7 @@ class MyBannerAd extends StatelessWidget {
         ),
       );
     } catch (_) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
   }
 }
