@@ -1,0 +1,21 @@
+name: Windows app
+
+on:
+  push:
+    branches:
+    - main
+    
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: subosito/flutter-action@v1
+        with:
+          channel: stable
+      - run: flutter config --enable-windows-desktop
+      - run: flutter build windows
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Windows
+          path: build/windows/runner/Release/
